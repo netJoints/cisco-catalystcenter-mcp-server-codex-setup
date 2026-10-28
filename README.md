@@ -2,11 +2,11 @@
 
 Connect **Codex on the same Mac** to a local [Cisco Catalyst Center MCP server](https://github.com/cisco-en-programmability/catc-mcp-oss). The server stays on loopback. Catalyst Center credentials stay in the server process, not in Git and not in this repository.
 
-**GitHub Pages:** https://netjoints.github.io/cisco-catalystcenter-mcp-server-codex-setup/
+**This repository:** https://github.com/netJoints/cisco-catalystcenter-mcp-server-codex-setup · [site](https://netjoints.github.io/cisco-catalystcenter-mcp-server-codex-setup/)
 
-**Cursor setup (sister guide):** https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/
+**Server install:** https://github.com/netJoints/cisco-catc-mcp-server-deployment-guide · [site](https://netjoints.github.io/cisco-catc-mcp-server-deployment-guide/)
 
-**Server install:** https://netjoints.github.io/cisco-catc-mcp-server-deployment-guide/
+**Cursor setup:** https://github.com/netJoints/cisco-catalystcenter-mcp-server-cursor-setup · [site](https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/)
 
 ChatGPT in the browser cannot reach `127.0.0.1`. Use Codex on this Mac, or the Cursor guide, for the local server. Details are in [ChatGPT](#chatgpt).
 
@@ -173,7 +173,6 @@ ChatGPT connector reference: [Developer mode and MCP connectors](https://help.op
 - [Switching skill (SKILL.md)](https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/SKILL.md)
 - [Switching playbook](https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/references/playbook.md)
 - [Cisco Catalyst Center MCP server](https://github.com/cisco-en-programmability/catc-mcp-oss)
-- [Podman deployment guide](https://github.com/netJoints/cisco-catc-mcp-server-deployment-guide)
-- [Deployment guide site](https://netjoints.github.io/cisco-catc-mcp-server-deployment-guide/)
-- [Cursor setup](https://github.com/netJoints/cisco-catalystcenter-mcp-server-cursor-setup)
+- [Podman deployment guide](https://github.com/netJoints/cisco-catc-mcp-server-deployment-guide) · [site](https://netjoints.github.io/cisco-catc-mcp-server-deployment-guide/)
+- [Cursor setup](https://github.com/netJoints/cisco-catalystcenter-mcp-server-cursor-setup) · [site](https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/)
 - [Codex MCP configuration](https://developers.openai.com/codex/mcp)
