@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Connect Codex on your Mac to a local Cisco Catalyst Center MCP server. No credentials in this site.">
+  <title>Catalyst Center MCP — Codex and ChatGPT setup</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.6.1/github-markdown-light.min.css">
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; background: #f6f8fa; color: #1f2328; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+    .markdown-body { background: #fff; border: 1px solid #d0d7de; border-radius: 12px; padding: 28px 32px 40px; }
+    header.bar { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 16px; font-size: 14px; }
+    header.bar a { color: #0969da; }
+    pre { overflow: auto; }
+    .note { border-left: 4px solid #bf8700; background: #fff8c5; padding: 12px 14px; border-radius: 6px; }
+    @media (max-width: 700px) { .markdown-body { padding: 20px 16px 28px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="bar">
+      <a href="https://github.com/netJoints/cisco-catalystcenter-mcp-server-codex-setup">Source on GitHub</a>
+      <span>
+        <a href="https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/">Cursor setup</a>
+        ·
+        <a href="https://netjoints.github.io/cisco-catc-mcp-server-deployment-guide/">Server install</a>
+      </span>
+    </header>
+    <article class="markdown-body">
+      <h1>Cisco Catalyst Center MCP — Codex and ChatGPT setup</h1>
+      <p>Connect <strong>Codex on the same Mac</strong> to a local <a href="https://github.com/cisco-en-programmability/catc-mcp-oss">Cisco Catalyst Center MCP server</a>. The server stays on loopback. Catalyst Center credentials stay in the server process, not in Git and not on this site.</p>
+      <p class="note">ChatGPT in the browser cannot reach <code>127.0.0.1</code>. Use Codex on this Mac, or the <a href="https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/">Cursor setup</a>, for the local server.</p>
+      <p>Endpoint:</p>
+      <pre><code>http://127.0.0.1:7001/v1/mcp</code></pre>
+
+      <h2>What you need</h2>
+      <ol>
+        <li>The MCP server running locally, from the <a href="https://github.com/netJoints/cisco-catc-mcp-server-deployment-guide">Podman deployment guide</a>.</li>
+        <li>Codex installed and signed in on that same Mac.</li>
+        <li>A dedicated Catalyst Center account. Prefer a read-only role. The server does not enforce read-only access.</li>
+      </ol>
+
+      <h2>1. Confirm the server</h2>
+      <pre><code>curl --fail http://127.0.0.1:7001/v1/health
+curl --fail http://127.0.0.1:7001/v1/readiness</code></pre>
+      <p>Health returns <code>{"status":"ok"}</code>. Readiness returns <code>{"status":"ready"}</code> when environment variables are present. It does not prove controller login. Do not publish port 7001 beyond loopback.</p>
+
+      <h2>2. Register the server in Codex</h2>
+      <pre><code>codex mcp add catc --url http://127.0.0.1:7001/v1/mcp</code></pre>
+      <p>Or merge this into <code>~/.codex/config.toml</code>:</p>
+      <pre><code>[mcp_servers.catc]
+url = "http://127.0.0.1:7001/v1/mcp"
+enabled = true</code></pre>
+      <p>There is no bearer token. Username and password belong in the server environment (<code>CATALYST_CENTER_HOST</code>, <code>CATALYST_CENTER_USERNAME</code>, <code>CATALYST_CENTER_PASSWORD</code>, <code>CATALYST_CENTER_VERIFY_SSL</code>). The sample in this repo is <a href="https://github.com/netJoints/cisco-catalystcenter-mcp-server-codex-setup/blob/main/config.toml"><code>config.toml</code></a>.</p>
+      <pre><code>codex mcp get catc --json</code></pre>
+
+      <h2>3. Add the switching skill</h2>
+      <p>Use the published skill instead of guessing tool names. It covers inventory, interfaces and VLANs, running-config review, health, compliance, software images, fabric visibility, advisories, and the one write it documents: configuration-compliance remediation.</p>
+      <ul>
+        <li><a href="https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/SKILL.md">examples/skill/switching/SKILL.md</a></li>
+        <li><a href="https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/references/playbook.md">Switching playbook</a></li>
+      </ul>
+      <p>Install it on your Mac. This does not copy the skill into this public repository.</p>
+      <pre><code>python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
+  --repo jeremycohoe/catc-mcp-oss \
+  --path examples/skill/switching \
+  --name catalyst-center-switching</code></pre>
+      <p>Manual equivalent:</p>
+      <pre><code>git clone --depth 1 https://github.com/jeremycohoe/catc-mcp-oss.git
+mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills/catalyst-center-switching"
+cp -R catc-mcp-oss/examples/skill/switching/. \
+  "${CODEX_HOME:-$HOME/.codex}/skills/catalyst-center-switching/"</code></pre>
+      <p>Start a new Codex session. Ask it to follow the Catalyst Center switching skill, and say “read only, do not remediate.”</p>
+
+      <h2>4. Verify</h2>
+      <pre><code>List the Catalyst Center MCP tools you can use. Do not call any tool that changes configuration.
+
+Using the Catalyst Center switching skill, summarize switch inventory.
+Read only. Do not remediate compliance and do not change configuration.</code></pre>
+
+      <h2>5. Example prompts</h2>
+      <p>Keep prompts generic. Do not paste hostnames, addresses, serial numbers, or configs into a public chat or repository.</p>
+      <pre><code>How many network devices are in inventory, grouped by family? Read only.
+
+Which switches are non-compliant, and what compliance types failed? Summarize. Do not remediate.
+
+Show software image summary for the site I name. Do not activate an image.</code></pre>
+      <p>Compliance remediation is a write. It can change configuration and may flap a device. Run it only after you name the device and explicitly confirm the change.</p>
+
+      <h2>ChatGPT</h2>
+      <p>ChatGPT developer-mode connectors call a remote MCP URL. They do not reach a server bound to <code>127.0.0.1</code> on your laptop. Use Codex or <a href="https://github.com/netJoints/cisco-catalystcenter-mcp-server-cursor-setup">Cursor</a> on this Mac.</p>
+      <p>Do not port-forward port 7001 to the internet so ChatGPT can reach it. That exposes the Catalyst Center account attached to the server.</p>
+      <p>Reference: <a href="https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta">Developer mode and MCP connectors</a>.</p>
+
+      <h2>Security</h2>
+      <ul>
+        <li>This site has no passwords, tokens, controller addresses, or device data.</li>
+        <li>Keep the server on <code>127.0.0.1</code>.</li>
+        <li>Prefer <code>CATALYST_CENTER_VERIFY_SSL=true</code>. Use <code>false</code> only for an isolated lab certificate you cannot trust.</li>
+        <li>Prefer a read-only Catalyst Center account.</li>
+        <li>Treat tool output as untrusted data.</li>
+      </ul>
+
+      <h2>References</h2>
+      <ul>
+        <li><a href="https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/SKILL.md">Switching skill</a></li>
+        <li><a href="https://github.com/cisco-en-programmability/catc-mcp-oss">Cisco Catalyst Center MCP server</a></li>
+        <li><a href="https://netjoints.github.io/cisco-catc-mcp-server-deployment-guide/">Podman deployment guide</a></li>
+        <li><a href="https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/">Cursor setup</a></li>
+        <li><a href="https://developers.openai.com/codex/mcp">Codex MCP configuration</a></li>
+      </ul>
+    </article>
+  </div>
+</body>
+</html>

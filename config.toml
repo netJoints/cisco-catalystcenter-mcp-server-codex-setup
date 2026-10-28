@@ -1,0 +1,10 @@
+# Sample Codex registration for a Catalyst Center MCP server on this Mac.
+# Merge into ~/.codex/config.toml. Do not commit your real config.
+#
+# Catalyst Center credentials are NOT set here. They belong in the server
+# process environment (CATALYST_CENTER_HOST, CATALYST_CENTER_USERNAME,
+# CATALYST_CENTER_PASSWORD, CATALYST_CENTER_VERIFY_SSL).
+
+[mcp_servers.catc]
+url = "http://127.0.0.1:7001/v1/mcp"
+enabled = true
