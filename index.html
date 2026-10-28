@@ -31,7 +31,7 @@
     <article class="markdown-body">
       <h1>Cisco Catalyst Center MCP — Codex and ChatGPT setup</h1>
       <p>Connect <strong>Codex on the same Mac</strong> to a local <a href="https://github.com/cisco-en-programmability/catc-mcp-oss">Cisco Catalyst Center MCP server</a>. The server stays on loopback. Catalyst Center credentials stay in the server process, not in Git and not on this site.</p>
-      <p class="note">ChatGPT in the browser cannot reach <code>127.0.0.1</code>. Use Codex on this Mac, or the <a href="https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/">Cursor setup</a>, for the local server.</p>
+      <p class="note">ChatGPT in the browser cannot reach <code>127.0.0.1</code>. Use Codex on this Mac, or the <a href="https://netjoints.github.io/cisco-catalystcenter-mcp-server-cursor-setup/">Cursor setup</a>, for the local server. Codex also needs <code>SKILL.md</code>: the MCP server supplies Catalyst Center tools, and <code>SKILL.md</code> tells Codex how to use them.</p>
       <p>Endpoint:</p>
       <pre><code>http://127.0.0.1:7001/v1/mcp</code></pre>
 
@@ -57,7 +57,17 @@ enabled = true</code></pre>
       <pre><code>codex mcp get catc --json</code></pre>
 
       <h2>3. Add the switching skill</h2>
-      <p>Use the published skill instead of guessing tool names. It covers inventory, interfaces and VLANs, running-config review, health, compliance, software images, fabric visibility, advisories, and the one write it documents: configuration-compliance remediation.</p>
+      <h3>What <code>SKILL.md</code> does</h3>
+      <p>The MCP server and <code>SKILL.md</code> do different jobs. The server is the capability: it logs in to Catalyst Center and returns live tool data. It does not choose the tool, the arguments, or the wording of the answer. <code>SKILL.md</code> is the procedure Codex reads when your question matches the skill. The filename is singular. The file has YAML front matter (<code>name</code>, <code>description</code>) and a workflow body. It is not a config file, and it must not contain passwords, controller addresses, or device output.</p>
+      <table>
+        <thead><tr><th>Piece</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>MCP server</td><td>Exposes the API tools for the installed release branch and returns live data.</td></tr>
+          <tr><td><code>SKILL.md</code></td><td>Tells Codex when the skill applies, which tool to call first, to fetch a device UUID instead of inventing one, which arguments are required, how to read the nested result, and when to stop because the next call would change the network.</td></tr>
+        </tbody>
+      </table>
+      <p>Registering the server without <code>SKILL.md</code> still lists the tools. Codex then treats them as a generic catalog. It is more likely to call the wrong tool, pass a hostname where the API expects a UUID, miss a required argument, or treat compliance remediation as an ordinary follow-up. With the skill installed, Codex starts with a broad read, drills into one device only when that read gives a reason, summarizes instead of dumping the payload, and asks before the one write the skill documents.</p>
+      <p>The switching skill covers inventory, interfaces and VLANs, running-config review, health, compliance, software images, fabric visibility, advisories, and configuration-compliance remediation. Tool names in the file are tied to a release branch, so keep the skill next to the same branch you run.</p>
       <ul>
         <li><a href="https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/SKILL.md">examples/skill/switching/SKILL.md</a></li>
         <li><a href="https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/references/playbook.md">Switching playbook</a></li>
@@ -90,7 +100,8 @@ Show software image summary for the site I name. Do not activate an image.</code
       <p>Compliance remediation is a write. It can change configuration and may flap a device. Run it only after you name the device and explicitly confirm the change.</p>
 
       <h2>ChatGPT</h2>
-      <p>ChatGPT developer-mode connectors call a remote MCP URL. They do not reach a server bound to <code>127.0.0.1</code> on your laptop. Use Codex or <a href="https://github.com/netJoints/cisco-catalystcenter-mcp-server-cursor-setup">Cursor</a> on this Mac.</p>
+      <p><code>SKILL.md</code> is a Codex skill file. ChatGPT does not read <code>~/.codex/skills</code>. A ChatGPT connector can call MCP tools, but it does not load this procedure unless you put the same rules in the custom GPT instructions or in the chat: which tool to call first, fetch UUIDs instead of inventing them, and stay read-only unless you explicitly ask for remediation. Do not paste credentials or live device dumps into those instructions.</p>
+      <p>ChatGPT developer-mode connectors also call a remote MCP URL. They do not reach a server bound to <code>127.0.0.1</code> on your laptop. Use Codex or <a href="https://github.com/netJoints/cisco-catalystcenter-mcp-server-cursor-setup">Cursor</a> on this Mac.</p>
       <p>Do not port-forward port 7001 to the internet so ChatGPT can reach it. That exposes the Catalyst Center account attached to the server.</p>
       <p>Reference: <a href="https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta">Developer mode and MCP connectors</a>.</p>
 

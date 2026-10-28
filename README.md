@@ -10,6 +10,8 @@ Connect **Codex on the same Mac** to a local [Cisco Catalyst Center MCP server](
 
 ChatGPT in the browser cannot reach `127.0.0.1`. Use Codex on this Mac, or the Cursor guide, for the local server. Details are in [ChatGPT](#chatgpt).
 
+The MCP server is the connection to Catalyst Center. [`SKILL.md`](https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/SKILL.md) is the operator procedure Codex follows when it uses that connection. Both are required for a useful setup. See [What SKILL.md does](#what-skillmd-does).
+
 ## What you need
 
 1. The MCP server running locally, installed with the [Podman deployment guide](https://github.com/netJoints/cisco-catc-mcp-server-deployment-guide).
@@ -65,11 +67,26 @@ Restart Codex if the server was added while the app was already open.
 
 ## 3. Add the switching skill
 
-Tool names and required arguments differ by Catalyst Center release. Use the published switching skill instead of guessing tool names:
+### What `SKILL.md` does
+
+Codex and the Catalyst Center MCP server do different jobs.
+
+| Piece | Role |
+|---|---|
+| MCP server | Capability. It logs in to Catalyst Center and exposes the API tools for the release branch you installed. It returns live data. It does not decide which tool to call, which argument a tool requires, or how to explain the result. |
+| `SKILL.md` | Procedure. Codex reads this file when your question matches the skill. It tells Codex when the skill applies, which tool to call first, how to get a device UUID instead of inventing one, which arguments are required, how to read the nested tool result, and when to stop because the next call would change the network. |
+
+Registering the MCP server without `SKILL.md` still lists the tools. Codex then treats them as a generic catalog. It is more likely to call the wrong tool, pass a hostname where the API expects a UUID, miss a required argument such as `limit`, or treat compliance remediation as an ordinary follow-up.
+
+With `SKILL.md` installed, Codex uses the tools in operator order: start with a broad read, drill into one device only after that read gives a reason, summarize instead of dumping the payload, and ask before the one write the skill documents (configuration-compliance remediation, which can flap a device).
+
+The file name is `SKILL.md`, singular, with YAML front matter (`name`, `description`) plus the workflow body. Codex matches the description to your question and then follows the body. It is not a config file, and it must not contain Catalyst Center passwords, controller addresses, or device output.
+
+The switching skill to install is:
 
 [examples/skill/switching/SKILL.md](https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/SKILL.md)
 
-That skill covers inventory, interfaces and VLANs, running-config review, health, compliance, software images, fabric visibility, advisories, and the one write it documents: configuration-compliance remediation. Its playbook also lists client URL snippets:
+It covers inventory, interfaces and VLANs, running-config review, health, compliance, software images, fabric visibility, advisories, and that one write. Tool names in the file are tied to a release branch, so keep the skill next to the same branch you run. Its playbook also lists client URL snippets:
 
 [examples/skill/switching/references/playbook.md](https://github.com/jeremycohoe/catc-mcp-oss/blob/main/examples/skill/switching/references/playbook.md)
 
@@ -128,7 +145,9 @@ Compliance remediation is a write. It can change configuration and may flap a de
 
 ## ChatGPT
 
-ChatGPT’s developer-mode connectors call a **remote** MCP URL. They do not reach a server bound to `127.0.0.1` on your laptop.
+`SKILL.md` is a Codex skill file. ChatGPT does not read `~/.codex/skills`. A ChatGPT connector can call MCP tools, but it does not load this procedure unless you put the same rules in the custom GPT instructions or in the chat: which tool to call first, fetch UUIDs instead of inventing them, read only unless you explicitly ask for remediation, and do not paste credentials or live device dumps into those instructions.
+
+ChatGPT’s developer-mode connectors also call a **remote** MCP URL. They do not reach a server bound to `127.0.0.1` on your laptop.
 
 Use one of these:
 
